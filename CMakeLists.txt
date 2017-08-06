@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  code_utils
 )
 
 find_package(Eigen3 REQUIRED)

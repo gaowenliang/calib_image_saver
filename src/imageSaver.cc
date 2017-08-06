@@ -12,18 +12,41 @@
 
 #include "../include/calib_image_saver/chessboard/Chessboard.h"
 
-ros::Subscriber image_sub_0;
+ros::Subscriber image_sub;
 
 std::string image_path;
 bool is_use_OpenCV = false;
 bool is_show       = false;
+bool is_save_data  = false;
+std::string data_path;
 cv::Size boardSize;
+cv::Mat iamge_dst;
 
+cv::Size image_size;
 int image_count   = 0;
 bool is_first_run = true;
 
 cv::Mat DistributedImage;
-// std::vector< std::vector< cv::Point2f > > total_image_points;
+std::vector< std::vector< cv::Point2f > > total_image_points;
+
+void
+save_chessboard_data( const std::string file_name, const std::vector< std::vector< cv::Point2f > > _image_points )
+{
+    cv::FileStorage fs( file_name, cv::FileStorage::WRITE );
+
+    fs << "model_type"
+       << "Chessboard";
+
+    fs << "board_width" << boardSize.width;
+    fs << "board_height" << boardSize.height;
+    fs << "image_width" << image_size.width;
+    fs << "image_height" << image_size.height;
+
+    for ( int image_index = 0; image_index < total_image_points.size( ); ++image_index )
+        for ( int point_index = 0; point_index < total_image_points.at( image_index ).size( ); ++point_index )
+        {
+        }
+}
 
 void
 drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vector< cv::Point2f >& imagePoints )
@@ -73,20 +96,26 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
         std::cout << "#[INFO] Get chessboard image: " << image_name << std::endl;
 
         cv::imwrite( image_name, image_input );
-        ++image_count;
 
+        ++image_count;
+        total_image_points.push_back( chessboard.getCorners( ) );
+
+        if ( is_first_run )
+        {
+            image_size.height = image_input.rows;
+            image_size.width  = image_input.cols;
+
+            DistributedImage.create( image_size, CV_8UC3 );
+
+            is_first_run = false;
+        }
         if ( is_show )
         {
-            if ( is_first_run )
-            {
-                cv::Mat image_tmp( image_input.rows, image_input.cols, CV_8UC3 );
-                DistributedImage = image_tmp;
-                cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
-            }
-
+            cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
             cv::namedWindow( image_name, CV_WINDOW_NORMAL );
-            drawChessBoard( image_input, DistributedImage, chessboard.getCorners( ) );
+            drawChessBoard( image_input, DistributedImage, total_image_points.back( ) );
             cv::imshow( image_name, image_input );
+            cv::imshow( "DistributedImage", DistributedImage );
             cv::waitKey( 10 );
             cv::destroyWindow( image_name );
         }
@@ -108,6 +137,8 @@ main( int argc, char** argv )
     n.getParam( "board_height", boardSize.height );
     n.getParam( "is_use_OpenCV", is_use_OpenCV );
     n.getParam( "is_show", is_show );
+    n.getParam( "is_save_data", is_save_data );
+    n.getParam( "data_path", data_path );
 
     if ( boardSize.height <= 1 || boardSize.width <= 1 )
     {
@@ -115,7 +146,16 @@ main( int argc, char** argv )
         return 0;
     }
 
-    image_sub_0
+    std::string data_file_name;
+    if ( is_save_data )
+    {
+        if ( data_path.empty( ) )
+            data_path = image_path;
+
+        data_file_name = data_path + "/data.ymal";
+    }
+
+    image_sub
     = n.subscribe< sensor_msgs::Image >( "/image_input", 3, callback_0, ros::TransportHints( ).tcpNoDelay( ) );
 
     while ( ros::ok( ) )
