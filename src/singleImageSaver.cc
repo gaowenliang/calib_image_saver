@@ -161,10 +161,7 @@ main( int argc, char** argv )
     image_sub = n.subscribe< sensor_msgs::Image >( "/image_input", 3, callback_0,
                                                    ros::TransportHints( ).tcpNoDelay( ) );
 
-    while ( ros::ok( ) )
-    {
-        ros::spinOnce( );
-    }
+    ros::spin( );
 
     cv::imwrite( image_path + "/IMG_" + "Distributed.jpg", DistributedImage );
     std::cout << "#[INFO] Get chessboard iamges: " << image_count << std::endl;

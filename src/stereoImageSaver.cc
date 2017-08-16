@@ -187,15 +187,14 @@ main( int argc, char** argv )
     message_filters::Subscriber< sensor_msgs::Image > sub_imgL( n, "/left_image", 2 );
     message_filters::Subscriber< sensor_msgs::Image > sub_imgR( n, "/right_image", 2 );
 
-    typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    typedef message_filters::sync_policies::ExactTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    //    typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image,
+    //    sensor_msgs::Image > SyncPolicy;
     message_filters::Synchronizer< SyncPolicy > sync( SyncPolicy( 3 ), sub_imgL, sub_imgR );
 
     sync.registerCallback( boost::bind( &imageProcessCallback, _1, _2 ) );
 
-    while ( ros::ok( ) )
-    {
-        ros::spinOnce( );
-    }
+    ros::spin( );
 
     cv::imwrite( image_path + "/left_" + "Distributed.jpg", DistributedImage_left );
     cv::imwrite( image_path + "/right_" + "Distributed.jpg", DistributedImage_right );
