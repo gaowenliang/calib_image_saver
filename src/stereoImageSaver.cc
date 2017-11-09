@@ -38,8 +38,7 @@ std::vector< std::vector< cv::Point2f > > total_image_points_left;
 std::vector< std::vector< cv::Point2f > > total_image_points_right;
 
 void
-save_chessboard_data( const std::string file_name,
-                      const std::vector< std::vector< cv::Point2f > > _image_points )
+save_chessboard_data( const std::string file_name, const std::vector< std::vector< cv::Point2f > > _image_points )
 {
     cv::FileStorage fs( file_name, cv::FileStorage::WRITE );
 
@@ -78,19 +77,17 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
         cv::Point2f pObs = imagePoints.at( j );
 
         // green points is the observed points
-        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
-                    5, green, 2, CV_AA, drawShiftBits );
+        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ), 5,
+                    green, 2, CV_AA, drawShiftBits );
 
         // yellow points is the observed points
-        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ),
-                                                  cvRound( pObs.y * drawMultiplier ) ),
+        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
                     5, yellow, 2, CV_AA, drawShiftBits );
     }
 }
 
 void
-imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg,
-                      const sensor_msgs::ImageConstPtr& right_image_msg )
+imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const sensor_msgs::ImageConstPtr& right_image_msg )
 {
     cv::Mat image_left  = cv_bridge::toCvCopy( left_image_msg, "mono8" )->image;
     cv::Mat image_right = cv_bridge::toCvCopy( right_image_msg, "mono8" )->image;
@@ -105,10 +102,8 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg,
     {
         std::stringstream ss_num;
         ss_num << image_count;
-        std::string image_file_left
-        = image_path + "/" + image_name_left + ss_num.str( ) + ".jpg";
-        std::string image_file_right
-        = image_path + "/" + image_name_right + ss_num.str( ) + ".jpg";
+        std::string image_file_left  = image_path + "/" + image_name_left + ss_num.str( ) + ".jpg";
+        std::string image_file_right = image_path + "/" + image_name_right + ss_num.str( ) + ".jpg";
 
         std::cout << "#[INFO] Get chessboard image, left: " << image_name_left << std::endl;
         std::cout << "                             right: " << image_name_right << std::endl;
@@ -125,8 +120,11 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg,
             image_size.height = image_left.rows;
             image_size.width  = image_right.cols;
 
-            DistributedImage_left.create( image_size, CV_8UC3 );
-            DistributedImage_right.create( image_size, CV_8UC3 );
+            cv::Mat DistributedImage_left_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+            cv::Mat DistributedImage_right_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+
+            DistributedImage_left_tmp.copyTo( DistributedImage_left );
+            DistributedImage_right_tmp.copyTo( DistributedImage_right );
 
             is_first_run = false;
         }
@@ -142,7 +140,7 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg,
             cv::imshow( image_file_right, image_right );
             cv::imshow( "DistributedImage_left", DistributedImage_left );
             cv::imshow( "DistributedImage_right", DistributedImage_right );
-            cv::waitKey( 10 );
+            cv::waitKey( 100 );
             cv::destroyWindow( image_file_left );
             cv::destroyWindow( image_file_right );
         }

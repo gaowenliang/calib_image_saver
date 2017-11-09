@@ -31,8 +31,7 @@ cv::Mat DistributedImage;
 std::vector< std::vector< cv::Point2f > > total_image_points;
 
 void
-save_chessboard_data( const std::string file_name,
-                      const std::vector< std::vector< cv::Point2f > > _image_points )
+save_chessboard_data( const std::string file_name, const std::vector< std::vector< cv::Point2f > > _image_points )
 {
     cv::FileStorage fs( file_name, cv::FileStorage::WRITE );
 
@@ -71,12 +70,11 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
         cv::Point2f pObs = imagePoints.at( j );
 
         // green points is the observed points
-        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
-                    5, green, 2, CV_AA, drawShiftBits );
+        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ), 5,
+                    green, 2, CV_AA, drawShiftBits );
 
         // yellow points is the observed points
-        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ),
-                                                  cvRound( pObs.y * drawMultiplier ) ),
+        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
                     5, yellow, 2, CV_AA, drawShiftBits );
     }
 }
@@ -106,9 +104,9 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
         {
             image_size.height = image_input.rows;
             image_size.width  = image_input.cols;
+            cv::Mat DistributedImage_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
 
-            DistributedImage.create( image_size, CV_8UC3 );
-
+            DistributedImage_tmp.copyTo( DistributedImage );
             is_first_run = false;
         }
         if ( is_show )
@@ -158,8 +156,7 @@ main( int argc, char** argv )
         data_file_name = data_path + "/data.ymal";
     }
 
-    image_sub = n.subscribe< sensor_msgs::Image >( "/image_input", 3, callback_0,
-                                                   ros::TransportHints( ).tcpNoDelay( ) );
+    image_sub = n.subscribe< sensor_msgs::Image >( "/image_input", 3, callback_0, ros::TransportHints( ).tcpNoDelay( ) );
 
     ros::spin( );
 
