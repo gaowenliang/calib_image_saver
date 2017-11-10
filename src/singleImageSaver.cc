@@ -26,6 +26,8 @@ cv::Mat iamge_dst;
 cv::Size image_size;
 int image_count   = 0;
 bool is_first_run = true;
+ros::Time time_last;
+int max_freq = 10;
 
 cv::Mat DistributedImage;
 std::vector< std::vector< cv::Point2f > > total_image_points;
@@ -82,6 +84,24 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
 void
 callback_0( const sensor_msgs::Image::ConstPtr& img )
 {
+
+    if ( is_first_run )
+    {
+        time_last         = img->header.stamp;
+        image_size.height = img->height;
+        image_size.width  = img->width;
+        cv::Mat DistributedImage_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+
+        DistributedImage_tmp.copyTo( DistributedImage );
+        is_first_run = false;
+        return;
+    }
+
+    ros::Time time_now    = img->header.stamp;
+    ros::Duration delta_t = time_now - time_last;
+    if ( delta_t.toSec( ) < 1.0 / max_freq )
+        return;
+
     cv::Mat image_input = cv_bridge::toCvCopy( img, "mono8" )->image;
 
     camera_model::Chessboard chessboard( boardSize, image_input );
@@ -100,15 +120,6 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
         ++image_count;
         total_image_points.push_back( chessboard.getCorners( ) );
 
-        if ( is_first_run )
-        {
-            image_size.height = image_input.rows;
-            image_size.width  = image_input.cols;
-            cv::Mat DistributedImage_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
-
-            DistributedImage_tmp.copyTo( DistributedImage );
-            is_first_run = false;
-        }
         if ( is_show )
         {
             cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
@@ -132,6 +143,7 @@ main( int argc, char** argv )
     ros::init( argc, argv, "singleImageSaver" );
     ros::NodeHandle n( "~" );
 
+    n.getParam( "rate", max_freq );
     n.getParam( "image_path", image_path );
     n.getParam( "board_width", boardSize.width );
     n.getParam( "board_height", boardSize.height );

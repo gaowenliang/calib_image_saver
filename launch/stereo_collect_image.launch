@@ -5,6 +5,7 @@
         <param name="image_path" type="string" value="/home/px/ws/devel/lib/camera_model/blue93"/>
         <param name="image_name_left" type="string" value="left_"/>
         <param name="image_name_right" type="string" value="right_"/>
+        <param name="rate" type="int" value="9"/>
         <param name="board_width" type="int" value="9"/>
         <param name="board_height" type="int" value="8"/>
         <param name="is_use_OpenCV" type="bool" value="false"/>
