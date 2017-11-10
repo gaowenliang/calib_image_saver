@@ -21,30 +21,29 @@ bool is_save_data  = false;
 std::string data_path;
 std::string image_name = "IMG_";
 cv::Size boardSize;
-cv::Mat iamge_dst;
 
 cv::Size image_size;
 int image_count       = 0;
 bool is_first_run     = true;
 bool is_get_chessbord = false;
-ros::Time time_last;
+ros::Time time_last, time_now;
 int max_freq = 10;
-
+cv::Mat image_in, image_show;
 cv::Mat DistributedImage;
 std::vector< std::vector< cv::Point2f > > total_image_points;
 
 void
-drawImage( cv::Mat& image, cv::Mat& _DistributedImage )
+showImage( cv::Mat& image, cv::Mat& _DistributedImage )
 {
-    cv::Mat imgROI = _DistributedImage( cv::Rect( image.cols, 0, image.cols, image.rows ) );
-    image.copyTo( imgROI );
-}
+    if ( image.channels( ) == 1 )
+        cv::cvtColor( image, image_show, CV_GRAY2RGB );
+    else
+        image_show = image;
 
-void
-showImage( )
-{
-    cv::imshow( "DistributedImage", DistributedImage );
-    cv::waitKey( 1000 );
+    cv::Mat imgROI = _DistributedImage( cv::Rect( image.cols, 0, image.cols, image.rows ) );
+    image_show.copyTo( imgROI );
+    cv::imshow( "DistributedImage", _DistributedImage );
+    cv::waitKey( 1000 / max_freq );
 }
 
 void
@@ -59,9 +58,7 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
     cv::Mat& image = image_input;
 
     if ( image.channels( ) == 1 )
-    {
         cv::cvtColor( image, image, CV_GRAY2RGB );
-    }
 
     for ( size_t j = 0; j < imagePoints.size( ); ++j )
     {
@@ -87,6 +84,8 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
 void
 callback_0( const sensor_msgs::Image::ConstPtr& img )
 {
+    image_in = cv_bridge::toCvCopy( img, "mono8" )->image;
+    time_now = img->header.stamp;
 
     if ( is_first_run )
     {
@@ -102,12 +101,17 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
             cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
     }
 
-    ros::Time time_now    = img->header.stamp;
-    ros::Duration delta_t = time_now - time_last;
-    if ( delta_t.toSec( ) < 1.0 / max_freq )
+    if ( is_show )
+        showImage( image_in, DistributedImage );
+}
+
+void
+process( )
+{
+    if ( is_first_run )
         return;
 
-    cv::Mat image_input = cv_bridge::toCvCopy( img, "mono8" )->image;
+    cv::Mat& image_input = image_in;
 
     camera_model::Chessboard chessboard( boardSize, image_input );
 
@@ -127,16 +131,16 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
         total_image_points.push_back( chessboard.getCorners( ) );
 
         if ( is_show )
+        {
             drawChessBoard( image_input, DistributedImage, total_image_points.back( ) );
-
+            showImage( image_input, DistributedImage );
+        }
         is_get_chessbord = true;
     }
     else
     {
         std::cout << "#[ERROR] Get no chessboard image." << std::endl;
     }
-    if ( is_show )
-        drawImage( image_input, DistributedImage );
 }
 
 int
@@ -161,22 +165,12 @@ main( int argc, char** argv )
         return 0;
     }
 
-    std::string data_file_name;
-    if ( is_save_data )
-    {
-        if ( data_path.empty( ) )
-            data_path = image_path;
-
-        data_file_name = data_path + "/data.ymal";
-    }
-
     image_sub = n.subscribe< sensor_msgs::Image >( "/image_input", 3, callback_0, ros::TransportHints( ).tcpNoDelay( ) );
 
     ros::Rate loop( max_freq );
     while ( ros::ok( ) )
     {
-        if ( is_show && !is_first_run )
-            showImage( );
+        process( );
         ros::spinOnce( );
         loop.sleep( );
     }

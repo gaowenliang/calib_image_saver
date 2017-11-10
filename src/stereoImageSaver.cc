@@ -1,10 +1,3 @@
-#define BACKWARD_HAS_DW 1
-#include "backward.hpp"
-namespace backward
-{
-backward::SignalHandling sh;
-}
-
 #include <cv_bridge/cv_bridge.h>
 #include <ros/console.h>
 #include <ros/ros.h>
@@ -33,51 +26,38 @@ std::string data_path;
 std::string image_name_left  = "left_";
 std::string image_name_right = "right_";
 cv::Size boardSize;
-cv::Mat iamge_dst;
 
 cv::Size image_size;
 int image_count       = 0;
 bool is_first_run     = true;
 bool is_get_chessbord = false;
-ros::Time time_last;
+ros::Time time_last, time_now;
 int max_freq = 10;
-
+cv::Mat image_in_l, image_in_r, image_show_l, image_show_r;
 cv::Mat DistributedImage;
 std::vector< std::vector< cv::Point2f > > total_image_points_left;
 std::vector< std::vector< cv::Point2f > > total_image_points_right;
 
 void
-save_chessboard_data( const std::string file_name, const std::vector< std::vector< cv::Point2f > > _image_points )
+showImage( cv::Mat& image, cv::Mat& image1, cv::Mat& _DistributedImage )
 {
-    cv::FileStorage fs( file_name, cv::FileStorage::WRITE );
+    if ( image.channels( ) == 1 )
+        cv::cvtColor( image, image_show_l, CV_GRAY2RGB );
+    else
+        image_show_l = image;
 
-    fs << "model_type"
-       << "Chessboard";
+    if ( image1.channels( ) == 1 )
+        cv::cvtColor( image1, image_show_r, CV_GRAY2RGB );
+    else
+        image_show_r = image1;
 
-    fs << "board_width" << boardSize.width;
-    fs << "board_height" << boardSize.height;
-    fs << "image_width" << image_size.width;
-    fs << "image_height" << image_size.height;
-
-    for ( int image_index = 0; image_index < _image_points.size( ); ++image_index )
-        for ( int point_index = 0; point_index < _image_points.at( image_index ).size( ); ++point_index )
-        {
-        }
-}
-
-void
-drawImage( cv::Mat& image, cv::Mat& image1, cv::Mat& _DistributedImage )
-{
     cv::Mat imgROI  = _DistributedImage( cv::Rect( 0, image.rows, image.cols, image.rows ) );
-    cv::Mat imgROI1 = _DistributedImage( cv::Rect( image1.cols, image.rows, image1.cols, image1.rows ) );
-    image.copyTo( imgROI );
-    image1.copyTo( imgROI1 );
-}
-void
-showImage( )
-{
+    cv::Mat imgROI1 = _DistributedImage( cv::Rect( image.cols, image.rows, image.cols, image.rows ) );
+    image_show_l.copyTo( imgROI );
+    image_show_r.copyTo( imgROI1 );
+
     cv::imshow( "DistributedImage", DistributedImage );
-    cv::waitKey( 10 );
+    cv::waitKey( 1000 / max_freq );
 }
 
 void
@@ -120,6 +100,10 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
 void
 imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const sensor_msgs::ImageConstPtr& right_image_msg )
 {
+    image_in_l = cv_bridge::toCvCopy( left_image_msg, "mono8" )->image;
+    image_in_r = cv_bridge::toCvCopy( right_image_msg, "mono8" )->image;
+    time_now   = left_image_msg->header.stamp;
+
     if ( is_first_run )
     {
         time_last         = left_image_msg->header.stamp;
@@ -133,23 +117,34 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
 
         if ( is_show )
             cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
-
-        return;
     }
 
-    ros::Time time_now    = left_image_msg->header.stamp;
-    ros::Duration delta_t = time_now - time_last;
-    if ( delta_t.toSec( ) < 1.0 / max_freq )
+    if ( is_show )
+        showImage( image_in_l, image_in_r, DistributedImage );
+}
+
+void
+process( )
+{
+    if ( is_first_run )
         return;
 
-    cv::Mat image_left  = cv_bridge::toCvCopy( left_image_msg, "mono8" )->image;
-    cv::Mat image_right = cv_bridge::toCvCopy( right_image_msg, "mono8" )->image;
+    cv::Mat image_left  = image_in_l;
+    cv::Mat image_right = image_in_r;
 
     camera_model::Chessboard chessboard_left( boardSize, image_left );
     camera_model::Chessboard chessboard_right( boardSize, image_right );
-
-    chessboard_left.findCorners( is_use_OpenCV );
-    chessboard_right.findCorners( is_use_OpenCV );
+#pragma omp parallel sections
+    {
+#pragma omp section
+        {
+            chessboard_left.findCorners( is_use_OpenCV );
+        }
+#pragma omp section
+        {
+            chessboard_right.findCorners( is_use_OpenCV );
+        }
+    }
 
     if ( chessboard_left.cornersFound( ) && chessboard_right.cornersFound( ) )
     {
@@ -159,7 +154,7 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
         std::string image_file_right = image_path + "/" + image_name_right + ss_num.str( ) + ".jpg";
 
         std::cout << "#[INFO] Get chessboard image, left: " << image_name_left + ss_num.str( ) + ".jpg" << std::endl;
-        std::cout << "                             right: " << image_name_right + ss_num.str( ) + ".jpg" << std::endl;
+        std::cout << "                              right: " << image_name_right + ss_num.str( ) + ".jpg" << std::endl;
 
         cv::imwrite( image_file_left, image_left );
         cv::imwrite( image_file_right, image_right );
@@ -175,7 +170,7 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
 
             drawChessBoard( image_left, DistributedImage_l, total_image_points_left.back( ) );
             drawChessBoard( image_right, DistributedImage_r, total_image_points_right.back( ) );
-            drawImage( image_left, image_right, DistributedImage );
+            showImage( image_left, image_right, DistributedImage );
         }
         is_get_chessbord = true;
     }
@@ -217,21 +212,19 @@ main( int argc, char** argv )
         data_file_name = data_path + "/data.ymal";
     }
 
-    message_filters::Subscriber< sensor_msgs::Image > sub_imgL( n, "/left_image", 200 );
-    message_filters::Subscriber< sensor_msgs::Image > sub_imgR( n, "/right_image", 200 );
+    message_filters::Subscriber< sensor_msgs::Image > sub_imgL( n, "/left_image", 1 );
+    message_filters::Subscriber< sensor_msgs::Image > sub_imgR( n, "/right_image", 1 );
 
-    //    typedef message_filters::sync_policies::ExactTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
-    typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
-    message_filters::Synchronizer< SyncPolicy > sync( SyncPolicy( 300 ), sub_imgL, sub_imgR );
+    typedef message_filters::sync_policies::ExactTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    // typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    message_filters::Synchronizer< SyncPolicy > sync( SyncPolicy( 50 ), sub_imgL, sub_imgR );
 
     sync.registerCallback( boost::bind( &imageProcessCallback, _1, _2 ) );
 
     ros::Rate loop( max_freq );
-
     while ( ros::ok( ) )
     {
-        if ( is_show && is_get_chessbord )
-            showImage( );
+        process( );
         ros::spinOnce( );
         loop.sleep( );
     }
