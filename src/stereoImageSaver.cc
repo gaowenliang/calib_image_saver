@@ -1,3 +1,10 @@
+#define BACKWARD_HAS_DW 1
+#include "backward.hpp"
+namespace backward
+{
+backward::SignalHandling sh;
+}
+
 #include <cv_bridge/cv_bridge.h>
 #include <ros/console.h>
 #include <ros/ros.h>
@@ -29,13 +36,13 @@ cv::Size boardSize;
 cv::Mat iamge_dst;
 
 cv::Size image_size;
-int image_count   = 0;
-bool is_first_run = true;
+int image_count       = 0;
+bool is_first_run     = true;
+bool is_get_chessbord = false;
 ros::Time time_last;
 int max_freq = 10;
 
-cv::Mat DistributedImage_left;
-cv::Mat DistributedImage_right;
+cv::Mat DistributedImage;
 std::vector< std::vector< cv::Point2f > > total_image_points_left;
 std::vector< std::vector< cv::Point2f > > total_image_points_right;
 
@@ -56,6 +63,21 @@ save_chessboard_data( const std::string file_name, const std::vector< std::vecto
         for ( int point_index = 0; point_index < _image_points.at( image_index ).size( ); ++point_index )
         {
         }
+}
+
+void
+drawImage( cv::Mat& image, cv::Mat& image1, cv::Mat& _DistributedImage )
+{
+    cv::Mat imgROI  = _DistributedImage( cv::Rect( 0, image.rows, image.cols, image.rows ) );
+    cv::Mat imgROI1 = _DistributedImage( cv::Rect( image1.cols, image.rows, image1.cols, image1.rows ) );
+    image.copyTo( imgROI );
+    image1.copyTo( imgROI1 );
+}
+void
+showImage( )
+{
+    cv::imshow( "DistributedImage", DistributedImage );
+    cv::waitKey( 10 );
 }
 
 void
@@ -86,6 +108,13 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
         cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
                     5, yellow, 2, CV_AA, drawShiftBits );
     }
+
+    cv::line( _DistributedImage, imagePoints.at( 0 ), imagePoints.at( boardSize.width - 1 ), green, 1 );
+    cv::line( _DistributedImage, imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ), imagePoints.at( 0 ), green, 1 );
+    cv::line( _DistributedImage, imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ),
+              imagePoints.at( boardSize.width * boardSize.height - 1 ), green, 1 );
+    cv::line( _DistributedImage, imagePoints.at( boardSize.width * boardSize.height - 1 ),
+              imagePoints.at( boardSize.width - 1 ), green, 1 );
 }
 
 void
@@ -97,12 +126,14 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
         image_size.height = left_image_msg->height;
         image_size.width  = left_image_msg->width;
 
-        cv::Mat DistributedImage_left_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
-        cv::Mat DistributedImage_right_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+        cv::Mat DistributedImage_tmp( cv::Size( image_size.width * 2, image_size.height * 2 ), CV_8UC3, cv::Scalar( 0 ) );
 
-        DistributedImage_left_tmp.copyTo( DistributedImage_left );
-        DistributedImage_right_tmp.copyTo( DistributedImage_right );
+        DistributedImage_tmp.copyTo( DistributedImage );
         is_first_run = false;
+
+        if ( is_show )
+            cv::namedWindow( "DistributedImage", CV_WINDOW_NORMAL );
+
         return;
     }
 
@@ -127,8 +158,8 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
         std::string image_file_left  = image_path + "/" + image_name_left + ss_num.str( ) + ".jpg";
         std::string image_file_right = image_path + "/" + image_name_right + ss_num.str( ) + ".jpg";
 
-        std::cout << "#[INFO] Get chessboard image, left: " << image_name_left << std::endl;
-        std::cout << "                             right: " << image_name_right << std::endl;
+        std::cout << "#[INFO] Get chessboard image, left: " << image_name_left + ss_num.str( ) + ".jpg" << std::endl;
+        std::cout << "                             right: " << image_name_right + ss_num.str( ) + ".jpg" << std::endl;
 
         cv::imwrite( image_file_left, image_left );
         cv::imwrite( image_file_right, image_right );
@@ -139,20 +170,14 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
 
         if ( is_show )
         {
-            cv::namedWindow( "DistributedImage_left", CV_WINDOW_NORMAL );
-            cv::namedWindow( "DistributedImage_right", CV_WINDOW_NORMAL );
-            cv::namedWindow( image_file_left, CV_WINDOW_NORMAL );
-            cv::namedWindow( image_file_right, CV_WINDOW_NORMAL );
-            drawChessBoard( image_left, DistributedImage_left, total_image_points_left.back( ) );
-            drawChessBoard( image_right, DistributedImage_right, total_image_points_right.back( ) );
-            cv::imshow( image_file_left, image_left );
-            cv::imshow( image_file_right, image_right );
-            cv::imshow( "DistributedImage_left", DistributedImage_left );
-            cv::imshow( "DistributedImage_right", DistributedImage_right );
-            cv::waitKey( 100 );
-            cv::destroyWindow( image_file_left );
-            cv::destroyWindow( image_file_right );
+            cv::Mat DistributedImage_l = DistributedImage( cv::Rect( 0, 0, image_left.cols, image_left.rows ) );
+            cv::Mat DistributedImage_r = DistributedImage( cv::Rect( image_left.cols, 0, image_left.cols, image_left.rows ) );
+
+            drawChessBoard( image_left, DistributedImage_l, total_image_points_left.back( ) );
+            drawChessBoard( image_right, DistributedImage_r, total_image_points_right.back( ) );
+            drawImage( image_left, image_right, DistributedImage );
         }
+        is_get_chessbord = true;
     }
     else
     {
@@ -192,20 +217,27 @@ main( int argc, char** argv )
         data_file_name = data_path + "/data.ymal";
     }
 
-    message_filters::Subscriber< sensor_msgs::Image > sub_imgL( n, "/left_image", 2 );
-    message_filters::Subscriber< sensor_msgs::Image > sub_imgR( n, "/right_image", 2 );
+    message_filters::Subscriber< sensor_msgs::Image > sub_imgL( n, "/left_image", 200 );
+    message_filters::Subscriber< sensor_msgs::Image > sub_imgR( n, "/right_image", 200 );
 
-    typedef message_filters::sync_policies::ExactTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
-    //    typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image,
-    //    sensor_msgs::Image > SyncPolicy;
-    message_filters::Synchronizer< SyncPolicy > sync( SyncPolicy( 3 ), sub_imgL, sub_imgR );
+    //    typedef message_filters::sync_policies::ExactTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    typedef message_filters::sync_policies::ApproximateTime< sensor_msgs::Image, sensor_msgs::Image > SyncPolicy;
+    message_filters::Synchronizer< SyncPolicy > sync( SyncPolicy( 300 ), sub_imgL, sub_imgR );
 
     sync.registerCallback( boost::bind( &imageProcessCallback, _1, _2 ) );
 
-    ros::spin( );
+    ros::Rate loop( max_freq );
 
-    cv::imwrite( image_path + "/left_" + "Distributed.jpg", DistributedImage_left );
-    cv::imwrite( image_path + "/right_" + "Distributed.jpg", DistributedImage_right );
+    while ( ros::ok( ) )
+    {
+        if ( is_show && is_get_chessbord )
+            showImage( );
+        ros::spinOnce( );
+        loop.sleep( );
+    }
+    //    ros::spin( );
+
+    cv::imwrite( image_path + "/" + "Distributed.jpg", DistributedImage );
     std::cout << "#[INFO] Get chessboard iamges: " << image_count << std::endl;
 
     return 0;
