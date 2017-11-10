@@ -31,6 +31,8 @@ cv::Mat iamge_dst;
 cv::Size image_size;
 int image_count   = 0;
 bool is_first_run = true;
+ros::Time time_last;
+int max_freq = 10;
 
 cv::Mat DistributedImage_left;
 cv::Mat DistributedImage_right;
@@ -89,6 +91,26 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
 void
 imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const sensor_msgs::ImageConstPtr& right_image_msg )
 {
+    if ( is_first_run )
+    {
+        time_last         = left_image_msg->header.stamp;
+        image_size.height = left_image_msg->height;
+        image_size.width  = left_image_msg->width;
+
+        cv::Mat DistributedImage_left_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+        cv::Mat DistributedImage_right_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
+
+        DistributedImage_left_tmp.copyTo( DistributedImage_left );
+        DistributedImage_right_tmp.copyTo( DistributedImage_right );
+        is_first_run = false;
+        return;
+    }
+
+    ros::Time time_now    = left_image_msg->header.stamp;
+    ros::Duration delta_t = time_now - time_last;
+    if ( delta_t.toSec( ) < 1.0 / max_freq )
+        return;
+
     cv::Mat image_left  = cv_bridge::toCvCopy( left_image_msg, "mono8" )->image;
     cv::Mat image_right = cv_bridge::toCvCopy( right_image_msg, "mono8" )->image;
 
@@ -115,19 +137,6 @@ imageProcessCallback( const sensor_msgs::ImageConstPtr& left_image_msg, const se
         total_image_points_left.push_back( chessboard_left.getCorners( ) );
         total_image_points_right.push_back( chessboard_right.getCorners( ) );
 
-        if ( is_first_run )
-        {
-            image_size.height = image_left.rows;
-            image_size.width  = image_right.cols;
-
-            cv::Mat DistributedImage_left_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
-            cv::Mat DistributedImage_right_tmp( image_size, CV_8UC3, cv::Scalar( 0 ) );
-
-            DistributedImage_left_tmp.copyTo( DistributedImage_left );
-            DistributedImage_right_tmp.copyTo( DistributedImage_right );
-
-            is_first_run = false;
-        }
         if ( is_show )
         {
             cv::namedWindow( "DistributedImage_left", CV_WINDOW_NORMAL );
@@ -157,6 +166,7 @@ main( int argc, char** argv )
     ros::init( argc, argv, "stereoImageSaver" );
     ros::NodeHandle n( "~" );
 
+    n.getParam( "rate", max_freq );
     n.getParam( "image_path", image_path );
     n.getParam( "board_width", boardSize.width );
     n.getParam( "board_height", boardSize.height );
