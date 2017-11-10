@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 2.8.3)
 project(calib_image_saver)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
-
+set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_CXX_FLAGS "-std=c++11 -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fPIC -fopenmp")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -56,7 +57,7 @@ include_directories(
 )
 
 add_executable(stereoImageSaver    src/stereoImageSaver.cc    src/chessboard/Chessboard.cc    )
-target_link_libraries(stereoImageSaver    ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(stereoImageSaver  dw  ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 
 add_executable(singleImageSaver    src/singleImageSaver.cc    src/chessboard/Chessboard.cc    )
