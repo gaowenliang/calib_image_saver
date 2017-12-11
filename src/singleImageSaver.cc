@@ -65,20 +65,20 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
         cv::Point2f pObs = imagePoints.at( j );
 
         // green points is the observed points
-        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ), 5,
-                    green, 2, CV_AA, drawShiftBits );
+        cv::circle( image, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ), 5, green, 2, CV_AA, drawShiftBits );
 
         // yellow points is the observed points
-        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ),
-                    5, yellow, 2, CV_AA, drawShiftBits );
+        cv::circle( _DistributedImage, cv::Point( cvRound( pObs.x * drawMultiplier ), cvRound( pObs.y * drawMultiplier ) ), 5, yellow, 2, CV_AA, drawShiftBits );
     }
 
     cv::line( _DistributedImage, imagePoints.at( 0 ), imagePoints.at( boardSize.width - 1 ), green, 1 );
     cv::line( _DistributedImage, imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ), imagePoints.at( 0 ), green, 1 );
-    cv::line( _DistributedImage, imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ),
-              imagePoints.at( boardSize.width * boardSize.height - 1 ), green, 1 );
-    cv::line( _DistributedImage, imagePoints.at( boardSize.width * boardSize.height - 1 ),
-              imagePoints.at( boardSize.width - 1 ), green, 1 );
+    cv::line( _DistributedImage,
+              imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ),
+              imagePoints.at( boardSize.width * boardSize.height - 1 ),
+              green,
+              1 );
+    cv::line( _DistributedImage, imagePoints.at( boardSize.width * boardSize.height - 1 ), imagePoints.at( boardSize.width - 1 ), green, 1 );
 }
 
 void
@@ -122,8 +122,8 @@ process( )
         std::stringstream ss_num;
 
         ss_num << image_count;
-        std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".jpg";
-        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".jpg" << std::endl;
+        std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".png";
+        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".png" << std::endl;
 
         cv::imwrite( image_file, image_input );
 
@@ -176,7 +176,7 @@ main( int argc, char** argv )
     }
     //   ros::spin( );
 
-    cv::imwrite( image_path + "/IMG_" + "Distributed.jpg", DistributedImage );
+    cv::imwrite( image_path + "/Distributed.jpg", DistributedImage );
     std::cout << "#[INFO] Get chessboard iamges: " << image_count << std::endl;
 
     return 0;

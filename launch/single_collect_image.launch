@@ -1,6 +1,6 @@
 <launch>
     <node pkg="calib_image_saver" type="singleImageSaver" name="saver" output="screen">
-        <remap from="/image_input" to="/mv_25001326/image_raw"/>
+        <remap from="/image_input" to="/camera/fisheye/image_raw"/>
         <param name="image_path" type="string" value="/home/gao/ws2/devel/lib/camera_model/tmp"/>
         <param name="image_name" type="string" value="IMG_"/>
         <param name="rate" type="int" value="9"/>
