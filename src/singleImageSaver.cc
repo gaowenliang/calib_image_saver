@@ -26,6 +26,7 @@ cv::Size image_size;
 int image_count       = 0;
 bool is_first_run     = true;
 bool is_get_chessbord = false;
+bool is_color         = false;
 ros::Time time_last, time_now;
 int max_freq = 10;
 cv::Mat image_in, image_show;
@@ -84,8 +85,17 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
 void
 callback_0( const sensor_msgs::Image::ConstPtr& img )
 {
-    image_in = cv_bridge::toCvCopy( img, "mono8" )->image;
-    time_now = img->header.stamp;
+    std::string encoding = img->encoding;
+    if ( encoding.compare( 0, 4, "mono8" ) == 0 )
+        is_color = false;
+    else if ( encoding.compare( 0, 4, "bgr8" ) == 0 )
+        is_color = true;
+
+    if ( is_color )
+        image_in = cv_bridge::toCvCopy( img, "bgr8" )->image;
+    else
+        image_in = cv_bridge::toCvCopy( img, "mono8" )->image;
+    time_now     = img->header.stamp;
 
     if ( is_first_run )
     {
