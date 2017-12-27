@@ -122,8 +122,8 @@ process( )
         std::stringstream ss_num;
 
         ss_num << image_count;
-        std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".jpg";
-        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".jpg" << std::endl;
+        std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".png";
+        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".png" << std::endl;
 
         cv::imwrite( image_file, image_input );
 
@@ -176,7 +176,7 @@ main( int argc, char** argv )
     }
     //   ros::spin( );
 
-    cv::imwrite( image_path + "Distributed.jpg", DistributedImage );
+    cv::imwrite( image_path + "/Distributed.png", DistributedImage );
     std::cout << "#[INFO] Get chessboard iamges: " << image_count << std::endl;
 
     return 0;
