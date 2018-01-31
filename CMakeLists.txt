@@ -60,4 +60,4 @@ target_link_libraries(stereoImageSaver  dw  ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 
 add_executable(singleImageSaver    src/singleImageSaver.cc    src/chessboard/Chessboard.cc    )
-target_link_libraries(singleImageSaver    ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(singleImageSaver  dw  ${catkin_LIBRARIES} ${OpenCV_LIBS})

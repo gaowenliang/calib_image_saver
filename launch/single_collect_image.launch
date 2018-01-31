@@ -1,7 +1,7 @@
 <launch>
     <node pkg="calib_image_saver" type="singleImageSaver" name="saver" output="screen">
-        <remap from="/image_input" to="/pg_17302081/image_raw"/>
-        <param name="image_path" type="string" value="/home/gao/ws2/src/Camera/calib_image_saver/images"/>
+        <remap from="/image_input" to="/pg_17221069/image_raw"/>
+        <param name="image_path" type="string" value="/home/gao/ws/src/Camera/calib_image_saver/images"/>
         <param name="image_name" type="string" value="IMG_"/>
         <param name="rate" type="int" value="9"/>
         <param name="board_width" type="int" value="9"/>
