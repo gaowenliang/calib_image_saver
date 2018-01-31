@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
-  code_utils
 )
 
 find_package(Eigen3 REQUIRED)
@@ -42,7 +41,7 @@ catkin_package(
      INCLUDE_DIRS include
      LIBRARIES
      CATKIN_DEPENDS image_transport roscpp sensor_msgs std_msgs
-     DEPENDS system_lib
+#     DEPENDS system_lib
     )
 ###########
 ## Build ##
