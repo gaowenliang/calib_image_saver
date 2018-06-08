@@ -21,6 +21,13 @@ catkin_make
 
 ## Run
 
+Modify the launch file:
+
+* /image_input: The image topic name, such as "/pg_17221069/image_raw"
+* image_path: The path to save images, such as "/home/ubuntu/images". You need to make sure the path exist.
+* board_width: Chessboard point size.
+* board_height: Chessboard point size.
+
 ```
 <launch>
     <node pkg="calib_image_saver" type="singleImageSaver" name="saver" output="screen">
@@ -34,7 +41,6 @@ catkin_make
         <param name="is_show" type="bool" value="true"/>
     </node>
 </launch>
-
 ```
 
 Make sure the detected chessboard points (yellow) fully fill the image as dense as possible.
