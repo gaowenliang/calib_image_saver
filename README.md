@@ -1,37 +1,43 @@
-## Welcome to GitHub Pages
+# calib_image_saver
 
-You can use the [editor on GitHub](https://github.com/gaowenliang/calib_image_saver/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+A small tool to collect images for calibration. The program will detect the chessboard in the image and save the image with chessboard detected.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Download code  
 
-### Markdown
+Enter your catkin work space:
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+```
+cd YOUR_PATH/catkin_ws/src
+  
+git clone https://github.com/gaowenliang/calib_image_saver.git
+```
+## Install
 
-```markdown
-Syntax highlighted code block
+```
+cd YOUR_PATH/catkin_ws/
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+catkin_make
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## Run
 
-### Jekyll Themes
+```
+<launch>
+    <node pkg="calib_image_saver" type="singleImageSaver" name="saver" output="screen">
+        <remap from="/image_input" to="YOUR_IMAGE_TOPIC"/>
+        <param name="image_path" type="string" value="YOUR_IMAGE_SAVE_PATH"/>
+        <param name="image_name" type="string" value="IMG_"/>
+        <param name="rate" type="int" value="9"/>
+        <param name="board_width" type="int" value="9"/>
+        <param name="board_height" type="int" value="6"/>
+        <param name="is_use_OpenCV" type="bool" value="true"/>
+        <param name="is_show" type="bool" value="true"/>
+    </node>
+</launch>
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/gaowenliang/calib_image_saver/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```
 
-### Support or Contact
+Make sure the detected chessboard points (yellow) fully fill the image as dense as possible.
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+<img src="doc/Distributed.jpg">
+
