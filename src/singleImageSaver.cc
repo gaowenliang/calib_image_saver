@@ -42,6 +42,8 @@ showImage( cv::Mat& image, cv::Mat& _DistributedImage )
 
     cv::Mat imgROI = _DistributedImage( cv::Rect( image.cols, 0, image.cols, image.rows ) );
     image_show.copyTo( imgROI );
+
+    cv::namedWindow( "DistributedImage", cv::WINDOW_NORMAL );
     cv::imshow( "DistributedImage", _DistributedImage );
     cv::waitKey( 1000 / max_freq );
 }
@@ -143,7 +145,8 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
 
         ss_num << image_count;
         std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".png";
-        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".png" << std::endl;
+        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".png"
+                  << std::endl;
 
         cv::imwrite( image_file, image_input );
 
