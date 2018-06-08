@@ -5,6 +5,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include "../include/calib_image_saver/chessboard/Chessboard.h"
+#include <boost/filesystem.hpp>
 #include <iomanip>
 #include <iostream>
 #include <opencv2/core/core.hpp>
@@ -14,10 +15,8 @@
 ros::Subscriber image_sub;
 
 std::string image_path;
-bool is_use_OpenCV = false;
-bool is_show       = false;
-bool is_save_data  = false;
-std::string data_path;
+bool is_use_OpenCV     = false;
+bool is_show           = false;
 std::string image_name = "IMG_";
 cv::Size boardSize;
 
@@ -182,9 +181,13 @@ main( int argc, char** argv )
     n.getParam( "board_height", boardSize.height );
     n.getParam( "is_use_OpenCV", is_use_OpenCV );
     n.getParam( "is_show", is_show );
-    n.getParam( "is_save_data", is_save_data );
-    n.getParam( "data_path", data_path );
     n.getParam( "image_name", image_name );
+
+    if ( !boost::filesystem::exists( image_path ) && !boost::filesystem::is_directory( image_path ) )
+    {
+        std::cerr << "#[ERROR] Cannot find Saving directory: " << image_path << "." << std::endl;
+        return 1;
+    }
 
     if ( boardSize.height <= 1 || boardSize.width <= 1 )
     {

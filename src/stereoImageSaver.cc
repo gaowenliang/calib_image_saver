@@ -4,12 +4,12 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <boost/filesystem.hpp>
+#include <iomanip>
+#include <iostream>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
-
-#include <iomanip>
-#include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -226,6 +226,12 @@ main( int argc, char** argv )
     n.getParam( "data_path", data_path );
     n.getParam( "image_name_left", image_name_left );
     n.getParam( "image_name_right", image_name_right );
+
+    if ( !boost::filesystem::exists( image_path ) && !boost::filesystem::is_directory( image_path ) )
+    {
+        std::cerr << "#[ERROR] Cannot find Saving directory: " << image_path << "." << std::endl;
+        return 1;
+    }
 
     if ( boardSize.height <= 1 || boardSize.width <= 1 )
     {
