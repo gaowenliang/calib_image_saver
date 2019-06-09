@@ -1,16 +1,15 @@
-#include <cv_bridge/cv_bridge.h>
-#include <ros/console.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-
 #include "calib_image_saver/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include <boost/filesystem.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <iomanip>
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <ros/console.h>
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 
 ros::Subscriber image_sub;
 
