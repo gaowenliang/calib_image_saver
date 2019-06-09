@@ -54,10 +54,25 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIR}
 )
+include_directories("include")
+
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/apriltag AprilTagSrc)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/apriltag_frontend AprilTagSrc2)
+set(CAMERA_MODEL_FILES
+    ${AprilTagSrc}
+    ${AprilTagSrc2}
+    )
 
 add_executable(stereoImageSaver    src/stereoImageSaver.cc    src/chessboard/Chessboard.cc    )
 target_link_libraries(stereoImageSaver  dw  ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-
 add_executable(singleImageSaver    src/singleImageSaver.cc    src/chessboard/Chessboard.cc    )
 target_link_libraries(singleImageSaver  dw  ${catkin_LIBRARIES} ${OpenCV_LIBS})
+
+add_executable(singleImageAprilSaver
+    src/singleImageAprilSaver.cc
+    ${CAMERA_MODEL_FILES} )
+target_link_libraries(singleImageAprilSaver
+    dw
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS})

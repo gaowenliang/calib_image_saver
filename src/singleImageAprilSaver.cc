@@ -4,7 +4,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include "../include/calib_image_saver/chessboard/Chessboard.h"
+#include "calib_image_saver/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp"
 #include <boost/filesystem.hpp>
 #include <iomanip>
 #include <iostream>
@@ -35,7 +35,7 @@ void
 showImage( cv::Mat& image, cv::Mat& _DistributedImage )
 {
     if ( image.channels( ) == 1 )
-      cv::cvtColor( image, image_show, cv::COLOR_GRAY2RGB );
+        cv::cvtColor( image, image_show, cv::COLOR_GRAY2RGB );
     else
         image_show = image;
 
@@ -83,23 +83,6 @@ drawChessBoard( cv::Mat& image_input, cv::Mat& _DistributedImage, const std::vec
                     CV_AA,
                     drawShiftBits );
     }
-
-    cv::line( _DistributedImage, imagePoints.at( 0 ), imagePoints.at( boardSize.width - 1 ), green, 1 );
-    cv::line( _DistributedImage,
-              imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ),
-              imagePoints.at( 0 ),
-              green,
-              1 );
-    cv::line( _DistributedImage,
-              imagePoints.at( boardSize.width * ( boardSize.height - 1 ) ),
-              imagePoints.at( boardSize.width * boardSize.height - 1 ),
-              green,
-              1 );
-    cv::line( _DistributedImage,
-              imagePoints.at( boardSize.width * boardSize.height - 1 ),
-              imagePoints.at( boardSize.width - 1 ),
-              green,
-              1 );
 }
 
 void
@@ -134,11 +117,12 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
 
     image_in.copyTo( image_input );
 
-    camera_model::Chessboard chessboard( boardSize, image_input );
+    aslam::cameras::GridCalibrationTargetAprilgrid aprilgrid( 4, 5, 10, 1 );
 
-    chessboard.findCorners( is_use_OpenCV );
+    std::vector< cv::Point2f > points2ds;
+    std::vector< bool > outCornerObserved;
 
-    if ( chessboard.cornersFound( ) )
+    if ( aprilgrid.computeObservation( image_in, points2ds, outCornerObserved ) )
     {
         std::stringstream ss_num;
 
@@ -150,7 +134,7 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
         cv::imwrite( image_file, image_input );
 
         ++image_count;
-        total_image_points.push_back( chessboard.getCorners( ) );
+        total_image_points.push_back( points2ds );
 
         if ( is_show )
         {
