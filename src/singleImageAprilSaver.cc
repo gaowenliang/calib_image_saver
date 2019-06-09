@@ -117,7 +117,7 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
 
     image_in.copyTo( image_input );
 
-    aslam::cameras::GridCalibrationTargetAprilgrid aprilgrid( 4, 5, 10, 1 );
+    aslam::cameras::GridCalibrationTargetAprilgrid aprilgrid( boardSize.height, boardSize.width, 10, 1 );
 
     std::vector< cv::Point2f > points2ds;
     std::vector< bool > outCornerObserved;
@@ -128,8 +128,7 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
 
         ss_num << image_count;
         std::string image_file = image_path + "/" + image_name + ss_num.str( ) + ".png";
-        std::cout << "#[INFO] Get chessboard image: " << image_name + ss_num.str( ) + ".png"
-                  << std::endl;
+        std::cout << "#[INFO] Get AprilTag image: " << image_name + ss_num.str( ) + ".png" << std::endl;
 
         cv::imwrite( image_file, image_input );
 
@@ -145,7 +144,7 @@ callback_0( const sensor_msgs::Image::ConstPtr& img )
     }
     else
     {
-        std::cout << "#[ERROR] Get no chessboard image." << std::endl;
+        std::cout << "#[ERROR] Get no AprilTag image." << std::endl;
         if ( is_show )
         {
             showImage( image_input, DistributedImage );
